@@ -1,11 +1,6 @@
 package utils;
 
-import model.Genre;
-import model.Movie;
-import model.MovieDetail;
-import model.MovieResponse;
-import model.Video;
-import model.VideoResponse;
+import model.*;
 import org.nocrala.tools.texttablefmt.BorderStyle;
 import org.nocrala.tools.texttablefmt.CellStyle;
 import org.nocrala.tools.texttablefmt.ShownBorders;
@@ -21,7 +16,7 @@ public class TableRenderer {
 
     // display movie list table
     public static void displayMovieTable(MovieResponse response, MovieService movieService) {
-        Table table = new Table(5, BorderStyle.CLASSIC, ShownBorders.ALL);
+        Table table = new Table(5, BorderStyle.UNICODE_BOX_DOUBLE_BORDER, ShownBorders.ALL);
 
         String[] columns = {"ID", "Title", "Release Date", "Rating", "Trailer"};
         for (String column : columns) {
@@ -29,7 +24,6 @@ public class TableRenderer {
         }
 
         for (Movie movie : response.getResults()) {
-            // fetch trailer for each movie
             String trailerUrl = "N/A";
             try {
                 VideoResponse videoResponse = movieService.getMovieVideos(movie.getId());
@@ -52,9 +46,24 @@ public class TableRenderer {
         System.out.println(table.render());
     }
 
-    // display movie detail
+    public static void displayGenreTable(GenreResponse genreResponse) {
+        Table table = new Table(2, BorderStyle.UNICODE_BOX_DOUBLE_BORDER, ShownBorders.ALL);
+
+        String[] columns = {"ID", "Genre"};
+        for (String column : columns) {
+            table.addCell(column, CENTER);
+        }
+
+        for (Genre genre: genreResponse.getGenres()) {
+            table.addCell(genre.getId().toString(), CENTER);
+            table.addCell(genre.getName(), LEFT);
+        }
+
+        System.out.println(table.render());
+    }
+
     public static void displayMovieDetail(MovieDetail detail, String trailerUrl) {
-        Table table = new Table(2, BorderStyle.CLASSIC, ShownBorders.ALL);
+        Table table = new Table(2, BorderStyle.UNICODE_BOX_DOUBLE_BORDER, ShownBorders.ALL);
 
         String genres = detail.getGenres() != null
                 ? detail.getGenres().stream().map(Genre::getName).collect(Collectors.joining(", "))

@@ -1,5 +1,6 @@
 package service;
 
+import model.GenreResponse;
 import model.MovieDetail;
 import model.MovieResponse;
 import model.VideoResponse;
@@ -75,4 +76,32 @@ public class MovieServiceImpl implements MovieService {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public GenreResponse getGenres() {
+        String url = String.format("%s/genre/movie/list?language=en", BASE_URL);
+        try {
+            HttpResponse<String> response = client.send(
+                    buildRequest(url), HttpResponse.BodyHandlers.ofString()
+            );
+            return mapper.readValue(response.body(), GenreResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    @Override
+    public MovieResponse searchMoviesByGenre(int genreId, int page) {
+        String url = String.format("%s/discover/movie?with_genres=%d&page=%d", BASE_URL, genreId, page);
+        try {
+            HttpResponse<String> response = client.send(
+                    buildRequest(url), HttpResponse.BodyHandlers.ofString()
+            );
+            return mapper.readValue(response.body(), MovieResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
