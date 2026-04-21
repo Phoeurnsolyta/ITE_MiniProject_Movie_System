@@ -16,6 +16,9 @@ public class App {
     private static int totalPages = 1;
     private static String query = "";
 
+    private static final String RESET = "\u001B[0m";
+    private static final String COLOR = "\u001B[95m";
+
     private static void updatePageNumber(int pageNum) {
         if (pageNum < 1) {
             pageNumber = 1;
@@ -28,11 +31,8 @@ public class App {
         pageNumber = pageNum;
     }
 
-
-    public static void main(String[] args) {
-            String RESET = "\u001B[0m";
-            String COLOR = "\u001B[95m";
-            System.out.println(COLOR + """
+    private static void printBanner() {
+        System.out.println(COLOR + """
                 ███╗   ███╗ ██████╗ ██╗   ██╗██╗███████╗     ██████╗██╗███╗   ██╗███████╗███╗   ███╗ █████╗   \s
                 ████╗ ████║██╔═══██╗██║   ██║██║██╔════╝    ██╔════╝██║████╗  ██║██╔════╝████╗ ████║██╔══██╗  \s
                 ██╔████╔██║██║   ██║██║   ██║██║█████╗      ██║     ██║██╔██╗ ██║█████╗  ██╔████╔██║███████║  \s
@@ -40,17 +40,16 @@ public class App {
                 ██║ ╚═╝ ██║╚██████╔╝ ╚████╔╝ ██║███████╗    ╚██████╗██║██║ ╚████║███████╗██║ ╚═╝ ██║██║  ██║  \s
                 ╚═╝     ╚═╝ ╚═════╝   ╚═══╝  ╚═╝╚══════╝     ╚═════╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝  \s
                 """ + RESET);
+    }
 
-            mainMenu();
+    public static void main(String[] args) {
+        mainMenu();
     }
 
     private static void mainMenu() {
         while (true) {
-            System.out.println("""
-                    [ 1 ]  Search Movie By Title
-                    [ 2 ]  Search Movie By Genre
-                    [ 3 ]  Exit
-                    """);
+            printBanner();
+            TableRenderer.displayMainMenu();
             System.out.print("[!] Choose an option: ");
             String option = scanner.nextLine().trim();
 
@@ -59,20 +58,33 @@ public class App {
                     System.out.print("[!] Enter movie title: ");
                     query = scanner.nextLine().trim();
                     pageNumber = 1;
-                    moviePageMenu();
+                    movieListMenu("search");
                 }
                 case "2" -> showMoviesByGenre();
-                case "3"  -> System.exit(0);
-                default   -> System.out.println("[!] Invalid option.");
+                case "3" -> {
+                    pageNumber = 1;
+                    movieListMenu("popular");
+                }
+                case "4" -> {
+                    pageNumber = 1;
+                    movieListMenu("top rated");
+                }
+                case "0" -> System.exit(0);
+                default  -> System.out.println("[!] Invalid option.");
             }
         }
     }
 
-    private static void moviePageMenu() {
+    private static void movieListMenu(String mode) {
         while (true) {
-            MovieResponse response = service.searchMovies(query, pageNumber);
-            totalPages = response.getTotalPages();
+            MovieResponse response = switch (mode) {
+                case "search"   -> service.searchMovies(query, pageNumber);
+                case "popular"  -> service.getPopularMovies(pageNumber);
+                case "top rated" -> service.getTopRatedMovies(pageNumber);
+                default         -> service.searchMovies(query, pageNumber);
+            };
 
+            totalPages = response.getTotalPages();
             TableRenderer.displayMovieTable(response, service);
 
             System.out.printf("Page %d / %d \n", pageNumber, totalPages);
@@ -92,11 +104,15 @@ public class App {
                 case "p"  -> updatePageNumber(pageNumber - 1);
                 case "g"  -> {
                     System.out.print("[!] Enter page number: ");
-                    int page = Integer.parseInt(scanner.nextLine().trim());
-                    updatePageNumber(page);
+                    try {
+                        int page = Integer.parseInt(scanner.nextLine().trim());
+                        updatePageNumber(page);
+                    } catch (NumberFormatException e) {
+                        System.out.println("[!] Invalid number.");
+                    }
                 }
                 case "md" -> showMovieDetail();
-                case "b" -> mainMenu();
+                case "b"  -> { return; }
                 case "e"  -> System.exit(0);
                 default   -> System.out.println("[!] Invalid option.");
             }
@@ -104,17 +120,106 @@ public class App {
     }
 
     private static void showMoviesByGenre() {
-
         GenreResponse genreResponse = service.getGenres();
         TableRenderer.displayGenreTable(genreResponse);
 
         System.out.print("[!] Enter genre ID: ");
-        int genreId = Integer.parseInt(scanner.nextLine().trim());
+        try {
+            int genreId = Integer.parseInt(scanner.nextLine().trim());
+            pageNumber = 1;
+
+            while (true) {
+                MovieResponse response = service.searchMoviesByGenre(genreId, pageNumber);
+                totalPages = response.getTotalPages();
+
+                TableRenderer.displayMovieTable(response, service);
+                System.out.printf("Page %d / %d \n", pageNumber, totalPages);
+                System.out.println("""
+                        [n]  Next page
+                        [p]  Previous page
+                        [g]  Go to page
+                        [md] Movie details
+                        [b]  Back to main menu
+                        [e]  Exit
+                        """);
+                System.out.print("[!] Choose an option: ");
+                String op = scanner.nextLine().trim();
+
+                switch (op.toLowerCase()) {
+                    case "n"  -> updatePageNumber(pageNumber + 1);
+                    case "p"  -> updatePageNumber(pageNumber - 1);
+                    case "g"  -> {
+                        System.out.print("[!] Enter page number: ");
+                        try {
+                            int page = Integer.parseInt(scanner.nextLine().trim());
+                            updatePageNumber(page);
+                        } catch (NumberFormatException e) {
+                            System.out.println("[!] Invalid number.");
+                        }
+                    }
+                    case "md" -> showMovieDetail();
+                    case "b"  -> { return; }
+                    case "e"  -> System.exit(0);
+                    default   -> System.out.println("[!] Invalid option.");
+                }
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("[!] Invalid genre ID.");
+        }
+    }
+
+    private static void showMovieDetail() {
+        System.out.print("[!] Enter movie ID: ");
+        try {
+            int movieId = Integer.parseInt(scanner.nextLine().trim());
+
+            MovieDetail detail = service.getMovieDetail(movieId);
+
+            String trailerUrl = "N/A";
+            VideoResponse videoResponse = service.getMovieVideos(movieId);
+            if (videoResponse.getResults() != null) {
+                trailerUrl = videoResponse.getResults().stream()
+                        .filter(v -> "Trailer".equals(v.getType()) && "YouTube".equals(v.getSite()))
+                        .findFirst()
+                        .map(v -> "https://youtube.com/watch?v=" + v.getKey())
+                        .orElse("N/A");
+            }
+
+            TableRenderer.displayMovieDetail(detail, trailerUrl);
+
+            // options after viewing detail
+            System.out.println("""
+                    [r]  Get Recommendation Movie That Are Similar To This
+                    [b]  Back
+                    [e]  Exit
+                    """);
+            System.out.print("[!] Choose an option: ");
+            String op = scanner.nextLine().trim();
+
+            switch (op.toLowerCase()) {
+                case "r" -> showRecommendations(movieId);
+                case "e" -> System.exit(0);
+                default  -> { } // anything else goes back
+            }
+
+        } catch (NumberFormatException e) {
+            System.out.println("[!] Invalid movie ID.");
+        }
+    }
+
+    private static void showRecommendations(int movieId) {
         pageNumber = 1;
 
         while (true) {
-            MovieResponse response = service.searchMoviesByGenre(genreId, pageNumber);
+            MovieResponse response = service.getRecommendations(movieId, pageNumber);
             totalPages = response.getTotalPages();
+
+            if (response.getResults() == null || response.getResults().isEmpty()) {
+                System.out.println("[!] No recommendations found for this movie.");
+                System.out.print("\nPress Enter to go back...");
+                scanner.nextLine();
+                return;
+            }
 
             TableRenderer.displayMovieTable(response, service);
             System.out.printf("Page %d / %d \n", pageNumber, totalPages);
@@ -123,10 +228,10 @@ public class App {
                     [p]  Previous page
                     [g]  Go to page
                     [md] Movie details
-                    [b]  Back to main menu
+                    [b]  Back
                     [e]  Exit
                     """);
-            System.out.print("Choose an option: ");
+            System.out.print("[!] Choose an option: ");
             String op = scanner.nextLine().trim();
 
             switch (op.toLowerCase()) {
@@ -134,38 +239,18 @@ public class App {
                 case "p"  -> updatePageNumber(pageNumber - 1);
                 case "g"  -> {
                     System.out.print("[!] Enter page number: ");
-                    int page = Integer.parseInt(scanner.nextLine().trim());
-                    updatePageNumber(page);
+                    try {
+                        int page = Integer.parseInt(scanner.nextLine().trim());
+                        updatePageNumber(page);
+                    } catch (NumberFormatException e) {
+                        System.out.println("[!] Invalid number.");
+                    }
                 }
                 case "md" -> showMovieDetail();
-                case "b"  -> mainMenu();
+                case "b"  -> { return; }
                 case "e"  -> System.exit(0);
                 default   -> System.out.println("[!] Invalid option.");
             }
         }
     }
-
-    private static void showMovieDetail() {
-        System.out.print("[!] Enter movie ID: ");
-        int movieId = Integer.parseInt(scanner.nextLine().trim());
-
-        MovieDetail detail = service.getMovieDetail(movieId);
-
-        String trailerUrl = "N/A";
-        VideoResponse videoResponse = service.getMovieVideos(movieId);
-        if (videoResponse.getResults() != null) {
-            trailerUrl = videoResponse.getResults().stream()
-                    .filter(v -> "Trailer".equals(v.getType()) && "YouTube".equals(v.getSite()))
-                    .findFirst()
-                    .map(v -> "https://youtube.com/watch?v=" + v.getKey())
-                    .orElse("N/A");
-        }
-
-        TableRenderer.displayMovieDetail(detail, trailerUrl);
-
-        System.out.print("\nPress Enter to go back...");
-        scanner.nextLine();
-    }
-
 }
-

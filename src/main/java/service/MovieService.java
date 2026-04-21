@@ -15,4 +15,10 @@ public interface MovieService {
     GenreResponse getGenres();
 
     MovieResponse searchMoviesByGenre(int genreId, int page);
+
+    MovieResponse getPopularMovies(int page);
+
+    MovieResponse getTopRatedMovies(int page);
+
+    MovieResponse getRecommendations(int movieId, int page);
 }

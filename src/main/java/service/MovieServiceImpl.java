@@ -104,4 +104,43 @@ public class MovieServiceImpl implements MovieService {
         }
     }
 
+    @Override
+    public MovieResponse getPopularMovies(int page) {
+        String url = String.format("%s/movie/popular?page=%d", BASE_URL, page);
+        try {
+            HttpResponse<String> response = client.send(
+                    buildRequest(url), HttpResponse.BodyHandlers.ofString()
+            );
+            return mapper.readValue(response.body(), MovieResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public MovieResponse getTopRatedMovies(int page) {
+        String url = String.format("%s/movie/top_rated?page=%d", BASE_URL, page);
+        try {
+            HttpResponse<String> response = client.send(
+                    buildRequest(url), HttpResponse.BodyHandlers.ofString()
+            );
+            return mapper.readValue(response.body(), MovieResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public MovieResponse getRecommendations(int movieId, int page) {
+        String url = String.format("%s/movie/%d/recommendations?page=%d", BASE_URL, movieId, page);
+        try {
+            HttpResponse<String> response = client.send(
+                    buildRequest(url), HttpResponse.BodyHandlers.ofString()
+            );
+            return mapper.readValue(response.body(), MovieResponse.class);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

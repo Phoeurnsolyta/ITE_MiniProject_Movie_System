@@ -10,6 +10,9 @@ import service.MovieService;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static javax.swing.SwingConstants.CENTER;
+import static javax.swing.SwingConstants.LEFT;
+
 public class TableRenderer {
     private static final CellStyle CENTER = new CellStyle(CellStyle.HorizontalAlign.CENTER);
     private static final CellStyle LEFT = new CellStyle(CellStyle.HorizontalAlign.LEFT);
@@ -88,6 +91,30 @@ public class TableRenderer {
             table.addCell(row[0], CENTER);
             table.addCell(row[1], LEFT);
         }
+
+        System.out.println(table.render());
+    }
+
+    public static void displayMainMenu() {
+        Table table = new Table(2, BorderStyle.UNICODE_BOX_DOUBLE_BORDER, ShownBorders.ALL);
+
+        table.addCell("Option", CENTER);
+        table.addCell("Description", CENTER);
+
+        table.addCell("[1]", CENTER);
+        table.addCell("Search Movie By Title", LEFT);
+
+        table.addCell("[2]", CENTER);
+        table.addCell("Search Movie By Genre", LEFT);
+
+        table.addCell("[3]", CENTER);
+        table.addCell("Popular Movies", LEFT);
+
+        table.addCell("[4]", CENTER);
+        table.addCell("Top Rated Movies", LEFT);
+
+        table.addCell("[0]", CENTER);
+        table.addCell("Exit", LEFT);
 
         System.out.println(table.render());
     }
